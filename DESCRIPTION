@@ -1,0 +1,13 @@
+Package: rcgmin
+Type: Package
+Title: Conjugate Gradient Optimizer in R
+Version: 0.0.0.9000
+Authors@R: person("Melville", "James", email = "jlmelville@gmail.com",
+    role = c("aut", "cre"))
+Description: An R implementation of a conjugate gradient optimizer using the
+    line search algorithms of Rasmussen or More'-Thuente.
+License: BSD 2-clause License + file LICENSE
+LazyData: TRUE
+Suggests:
+    testthat
+RoxygenNote: 5.0.1
