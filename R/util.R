@@ -49,7 +49,3 @@ make_step0 <- function(fn, gr, x, pv, f = fn(x), df = gr(x)) {
   )
 }
 
-#    alpha0 <- 2 * (f0 - f_old) / d_old
-#    if (alpha0 / alpha > max_alpha_mult) {
-#      alpha0 <- alpha * max_alpha_mult
-#    }
