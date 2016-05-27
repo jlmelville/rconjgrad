@@ -6,7 +6,7 @@ cubic_extrapolate <- function(x1, f1, g1, x2, f2, g2) {
   )
 }
 
-cubic_extrapolates <- function(step1, step2) {
+cubic_extrapolate_step <- function(step1, step2) {
   cubic_extrapolate(step1$alpha, step1$f, step1$d, step2$alpha, step2$f, step2$d)
 }
 
@@ -38,7 +38,7 @@ nwc <- function(x0, f0, df0, x1, f1, df1, ignoreWarnings = FALSE) {
 
 }
 
-cubic_interpolates <- function(step1, step2) {
+cubic_interpolate_step <- function(step1, step2) {
   cubic_interpolate(step1$alpha, step1$f, step1$d,
                     step2$alpha, step2$f, step2$d)
 }
@@ -47,7 +47,7 @@ quadratic_interpolate <- function(x1, f1, g1, x2, f2) {
   x1 - (0.5 * g1 * (x2 - x1) ^ 2) / (f2 - f1 - g1 * (x2 - x1))
 }
 
-quadratic_interpolates <- function(step1, step2) {
+quadratic_interpolate_step <- function(step1, step2) {
   quadratic_interpolate(step1$alpha, step1$f, step1$d,
                         step2$alpha, step2$f)
 }
