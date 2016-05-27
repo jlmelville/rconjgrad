@@ -2,23 +2,8 @@ dot <- function(a, b) {
   sum(t(a) %*% b)
 }
 
-max_alpha <- function(fcn, am, mu) {
-  v <- fcn(0)
-  (v$f - fcn(am)$f)/(-mu *  v$g)
-}
-
-fd <- function(f, d = 1e-6) {
-  function(par) {
-    (f(par + d) - f(par - d)) / (2 * d)
-  }
-}
-
 format_vec <- function(vec) {
   paste(formatC(vec), collapse = ' ')
-}
-
-mvec <- function(vec) {
-  paste(vec, collapse = '; ')
 }
 
 make_phi <- function(fn, gr, par, pv, debug = FALSE, ...) {
@@ -49,3 +34,18 @@ make_step0 <- function(fn, gr, x, pv, f = fn(x), df = gr(x)) {
   )
 }
 
+
+# max_alpha <- function(fcn, am, mu) {
+#   v <- fcn(0)
+#   (v$f - fcn(am)$f)/(-mu *  v$g)
+# }
+
+# fd <- function(f, d = 1e-6) {
+#   function(par) {
+#     (f(par + d) - f(par - d)) / (2 * d)
+#   }
+# }
+
+# mvec <- function(vec) {
+#   paste(vec, collapse = '; ')
+# }
