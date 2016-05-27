@@ -20,7 +20,7 @@ rfn <- rosenbrock_banana$fr
 rgr <- rosenbrock_banana$grr
 
 rls <- function(fn, gr, x, pv, alpha, c1, c2) {
-  ras_ls(phi_alpha = make_phi(fn, gr, x, pv),
+  ras_ls(phi = make_phi(fn, gr, x, pv),
                    alpha,
                    step0 = make_step0(fn, gr, x, pv),
                    max_fn = 10000,
