@@ -1,3 +1,70 @@
+# Rasmussen Line Search
+#
+# Line Search Factory Function
+#
+# @param c1 Constant used in sufficient decrease condition. Should take a value
+#   between 0 and 1.
+# @param c2 Constant used in curvature condition. Should take a value between
+#   c1 and 1.
+# @param ext Extrapolation constant. Prevents step size extrapolation being
+#   too large.
+# @param int Interpolation constant. Prevents step size being too small.
+# @param max_fn Maximum number of function evaluations allowed.
+# @return Line search function for use in the conjugate gradient routine.
+rasmussen <- function(c1 = c2 / 2, c2 = 0.1, int = 0.1, ext = 3.0,
+                      max_fn = 20) {
+  if (c2 < c1) {
+    stop("rasmussen line search: c2 < c1")
+  }
+  function(phi, step0, alpha) {
+    ras_ls(phi, alpha, step0, c1, c2, ext, int, max_fn)
+  }
+}
+
+# Rasmussen Line Search
+#
+# Line Search Method
+#
+# @param phi Line function.
+# @param alpha Initial guess for step size.
+# @param step0 Line search values at starting point of line search.
+# @param c1 Constant used in sufficient decrease condition. Should take a value
+#   between 0 and 1.
+# @param c2 Constant used in curvature condition. Should take a value between
+#   c1 and 1.
+# @param ext Extrapolation constant. Prevents step size extrapolation being
+#   too large.
+# @param int Interpolation constant. Prevents step size being too small.
+# @param max_fn Maximum number of function evaluations allowed.
+# @return List containing:
+# \itemize{
+#   \item step Valid step size or the last step size evaluated.
+#   \item nfn Number of function evaluations.
+# }
+ras_ls <- function(phi, alpha, step0, c1 = 0.1, c2 = 0.1 / 2, ext = 3.0,
+                   int = 0.1, max_fn = 20) {
+  if (c2 < c1) {
+    stop("Rasmussen line search: c2 < c1")
+  }
+
+  # extrapolate from initial alpha until either curvature condition is met
+  # or the armijo condition is NOT met
+  ex_result <- extrapolate_step_size(phi, alpha, step0, c1, c2, ext, int,
+                                     max_fn)
+
+  step <- ex_result$step
+  nfn <- ex_result$nfn
+  max_fn <- max_fn - nfn
+  if (max_fn <= 0) {
+    return(ex_result)
+  }
+
+  # interpolate until the Strong Wolfe conditions are met
+  int_result <- interpolate_step_size(phi, step0, step, c1, c2, int, max_fn)
+  int_result$nfn <- int_result$nfn + nfn
+  int_result
+}
+
 # Ensure Valid Step Size
 #
 # Given an initial step size, if either the function value or the directional
@@ -139,71 +206,5 @@ interpolate_step_size <- function(phi, step0, step, c1, c2, int, max_fn = 20) {
   list(step = step3, nfn = nfn)
 }
 
-# Rasmussen Line Search
-#
-# Line Search Method
-#
-# @param phi Line function.
-# @param alpha Initial guess for step size.
-# @param step0 Line search values at starting point of line search.
-# @param c1 Constant used in sufficient decrease condition. Should take a value
-#   between 0 and 1.
-# @param c2 Constant used in curvature condition. Should take a value between
-#   c1 and 1.
-# @param ext Extrapolation constant. Prevents step size extrapolation being
-#   too large.
-# @param int Interpolation constant. Prevents step size being too small.
-# @param max_fn Maximum number of function evaluations allowed.
-# @return List containing:
-# \itemize{
-#   \item step Valid step size or the last step size evaluated.
-#   \item nfn Number of function evaluations.
-# }
-ras_ls <- function(phi, alpha, step0, c1 = 0.1, c2 = 0.1 / 2, ext = 3.0,
-                   int = 0.1, max_fn = 20) {
-  if (c2 < c1) {
-    stop("Rasmussen line search: c2 < c1")
-  }
 
-  # extrapolate from initial alpha until either curvature condition is met
-  # or the armijo condition is NOT met
-  ex_result <- extrapolate_step_size(phi, alpha, step0, c1, c2, ext, int,
-                                     max_fn)
-
-  step <- ex_result$step
-  nfn <- ex_result$nfn
-  max_fn <- max_fn - nfn
-  if (max_fn <= 0) {
-    return(ex_result)
-  }
-
-  # interpolate until the Strong Wolfe conditions are met
-  int_result <- interpolate_step_size(phi, step0, step, c1, c2, int, max_fn)
-  int_result$nfn <- int_result$nfn + nfn
-  int_result
-}
-
-
-# Rasmussen Line Search
-#
-# Line Search Factory Function
-#
-# @param c1 Constant used in sufficient decrease condition. Should take a value
-#   between 0 and 1.
-# @param c2 Constant used in curvature condition. Should take a value between
-#   c1 and 1.
-# @param ext Extrapolation constant. Prevents step size extrapolation being
-#   too large.
-# @param int Interpolation constant. Prevents step size being too small.
-# @param max_fn Maximum number of function evaluations allowed.
-# @return Line search function for use in the conjugate gradient routine.
-rasmussen <- function(c1 = c2 / 2, c2 = 0.1, int = 0.1, ext = 3.0,
-                      max_fn = 20) {
-  if (c2 < c1) {
-    stop("rasmussen line search: c2 < c1")
-  }
-  function(phi, step0, alpha) {
-    ras_ls(phi, alpha, step0, c1, c2, ext, int, max_fn)
-  }
-}
 
