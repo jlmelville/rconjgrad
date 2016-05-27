@@ -1,3 +1,5 @@
+# Test functions from the More'-Thuente paper.
+
 # 1 phi(a) = -(a) / (a^2 + b) phi'(a) = (a^2 - b) / (a^2 + b)^2 b = 2
 fn1 <- function(alpha, beta = 2) {
   -alpha / (alpha ^ 2 + beta)
