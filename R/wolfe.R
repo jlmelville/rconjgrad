@@ -117,6 +117,30 @@ strong_curvature_ok <- function(d0, da, c2) {
   abs(da) <= -c2 * d0
 }
 
+# Strong Curvature Condition
+#
+# Line search test.
+#
+# Ensures that the value of the directional derivative of the line search
+# direction at a candidate step size is equal to or greater than a specified
+# fraction of the slope of the line at the starting point of the search, while
+# having the same direction. This condition is used to make the step size lie
+# close to a stationary point. Unlike the normal curvature condition, a step
+# size where the sign of the gradient changed (e.g. the minimum had been
+# skipped) would not be acceptable for the strong curvature condition.
+#
+# In combination with the sufficient decrease condition \code{\link{armijo_ok}}
+# these conditions make up the Strong Wolfe conditions.
+#
+# @param step0 Line search values at starting point.
+# @param step Line search value at a step along the line.
+# @param c2 Curvature condition constant. Should take a value between \code{c1}
+#  (the constant used in the sufficient decrease condition check) and 1.
+# @return \code{TRUE} if the curvature condition is met.
+strong_curvature_ok_step <- function(step0, step, c2) {
+  strong_curvature_ok(step0$d, step$d, c2)
+}
+
 # Are the Strong Wolfe Conditions Met?
 #
 # Step size check.
@@ -155,7 +179,6 @@ strong_wolfe_ok <- function(f0, d0, alpha, fa, da, c1, c2) {
 #   c1 and 1.
 # @return TRUE if the Strong Wolfe condition is met by the step size.
 strong_wolfe_ok_step <- function(step0, step, c1, c2) {
-  armijo_ok(step0$f, step0$d, step$alpha, step$f, c1) &&
-    strong_curvature_ok(step0$d, step$d, c2)
+  armijo_ok_step(step0, step, c1) && strong_curvature_ok_step(step0, step, c2)
 }
 
