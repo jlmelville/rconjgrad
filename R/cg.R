@@ -31,23 +31,19 @@ conj_grad <- function(par, fn, gr,
 
   # initial step is red/(||pv||+1)
   alpha <- red / (1 - d0)
-#  alpha <- 1
 
   iter <- 0
   while (iter < max_iter) {
     iter <- iter + 1
-    #message("f0 = ", formatC(step0$f), " c1 = ", formatC(c1),
-    #        " c2 = ", formatC(c2))
 
     phi <- make_phi(fn, gr, par, pv, debug = debug, ...)
 
     ls_result <- line_search(phi, step0, alpha)
-    #message("interpolated alpha = ", formatC(ls_result$step$alpha))
 
     step <- ls_result$step
     nfn <- nfn + ls_result$nfn
 
-    if (!strong_wolfe_oks(step0, step, c1, c2)) {
+    if (!strong_wolfe_ok_step(step0, step, c1, c2)) {
       if (verbose) {
         message("Could not satisfy the Strong Wolfe Conditions, exiting")
       }
@@ -91,13 +87,15 @@ conj_grad <- function(par, fn, gr,
     reset_CG <- FALSE
     if (step0$d > 0) {
       if (verbose) {
-        message("New CG direction is not a descent direction, resetting to steepest descent")
+        message("New CG direction is not a descent direction, ",
+                  "resetting to steepest descent")
       }
       reset_CG <- TRUE
     }
     else if (ortho_restart && ortho_test >= nu) {
       if (verbose) {
-        message("New CG direction is not sufficiently orthogonal, resetting to steepest descent")
+        message("New CG direction is not sufficiently orthogonal, ",
+                "resetting to steepest descent")
       }
       reset_CG <- TRUE
     }
@@ -123,7 +121,8 @@ conj_grad <- function(par, fn, gr,
               " phi'(a) = ", formatC(step$d),
               " alpha_init = ", formatC(old_alpha),
               " alpha = ", formatC(step$alpha),
-              " slope_ratio = ", formatC(slope_ratio), " ", formatC(d_old), " / ", formatC(step0$d),
+              " slope_ratio = ", formatC(slope_ratio), " ",
+                                 formatC(d_old), " / ", formatC(step0$d),
               " ortho = ", formatC(ortho_test),
               " beta = ", formatC(beta)
       )
