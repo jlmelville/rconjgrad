@@ -1,105 +1,174 @@
-find_sane <- function(phi, alpha, min_alpha = 0, max_fn = 20) {
+# Ensure Valid Step Size
+#
+# Given an initial step size, if either the function value or the directional
+# derivative is non-finite (NaN or infinite), reduce the step size until
+# finite values are found.
+#
+# @param phi Line function.
+# @param alpha Initial step size.
+# @param min_alpha Minimum step size.
+# @param max_fn Maximum number of function evaluations allowed.
+# @return List containing:
+# \itemize{
+#   \item step Valid step size or the last step size evaluated.
+#   \item nfn Number of function evaluations.
+# }
+find_finite <- function(phi, alpha, min_alpha = 0, max_fn = 20) {
   nfn <- 0
-  while (nfn < max_fn) {
+  while (nfn < max_fn && alpha > min_alpha) {
     step <- phi(alpha)
-    if (is.nan(step$f)) {
-      step$f <- Inf
-    }
     nfn <- nfn + 1
-
-    if (is.infinite(step$f) || any(is.nan(step$df) + is.infinite(step$df))) {
-      # bisect and try again
-      alpha <- (min_alpha + alpha) / 2
-    } else {
+    if (is.finite(step$f) && is.finite(step$df)) {
       break
     }
+    alpha <- (min_alpha + alpha) / 2
   }
   list(step = step, nfn = nfn)
 }
 
-extrapolate_step_size <- function(phi, alpha, step0,
-                                  max_fn = 20,
-                                  c1, c2, EXT, INT) {
+# Increase Step Size
+#
+# @param phi Line function.
+# @param alpha Initial step size.
+# @param step0 Line search value at the initial step size.
+# @param c1 Constant used in sufficient decrease condition. Should take a value
+#   between 0 and 1.
+# @param c2 Constant used in curvature condition. Should take a value between
+#   c1 and 1.
+# @param ext Extrapolation constant. Prevents step size extrapolation being
+#   too large.
+# @param int Interpolation constant. Prevents step size extrapolation being
+#   too small.
+# @param max_fn Maximum number of function evaluations allowed.
+# @return List containing:
+# \itemize{
+#   \item step Valid step size or the last step size evaluated.
+#   \item nfn Number of function evaluations.
+# }
+extrapolate_step_size <- function(phi, alpha, step0, c1, c2, ext, int,
+                                  max_fn = 20) {
   step <- list(alpha = alpha)
 
-  # keep a count of number of function evaluations
   nfn <- 0
   while (1) {
-    sane_result <- find_sane(phi, step$alpha, max_fn, min_alpha = 0)
-    nfn <- nfn + sane_result$nfn
-    max_fn <- max_fn - sane_result$nfn
-    step <- sane_result$step
+    result <- find_finite(phi, step$alpha, max_fn, min_alpha = 0)
+    nfn <- nfn + result$nfn
+    max_fn <- max_fn - result$nfn
+    step <- result$step
 
-    # are we done extrapolating?
     if (extrapolation_ok(step0, step, c1, c2) || max_fn == 0) {
       break
     }
-    step$alpha <- tweaked_extrapolation(step0, step, EXT, INT)
-    #    message("ext_alpha = ", formatC(step$alpha))
+    step$alpha <- tweaked_extrapolation(step0, step, ext, int)
   }
 
   list(step = step, nfn = nfn)
 }
 
-extrapolation_ok <- function(step0, step_a, c1, c2) {
-  curvature_ok_step(step0, step_a, c2) || !armijo_ok_step(step0, step_a, c1)
+# Extrapolation Check
+#
+# Checks that an extrapolated step size is sufficiently large: either by
+# passing the curvature condition or failing the sufficient decrease condition.
+#
+# @param step0 Line search values at starting point of line search.
+# @param step Line search value at candiate step size.
+# @param c1 Constant used in sufficient decrease condition. Should take a value
+#   between 0 and 1.
+# @param c2 Constant used in curvature condition. Should take a value between
+#   c1 and 1.
+# @return TRUE if the extrapolated point is sufficiently large.
+extrapolation_ok <- function(step0, step, c1, c2) {
+  curvature_ok_step(step0, step, c2) || !armijo_ok_step(step0, step, c1)
 }
 
-tweaked_extrapolation <- function(step0, step3, EXT, INT) {
-  ext_alpha <- cubic_extrapolate_step(step0, step3)
-  tweak_extrapolation(ext_alpha, step0$alpha, step3$alpha, EXT, INT)
+# Extrapolate and Tweak Step Size
+#
+# Carries out an extrapolation of the step size, tweaked to not be too small
+# or large.
+#
+# @param step0 Line search values at starting point of line search.
+# @param step Line search value at candiate step size.
+# @param c1 Constant used in sufficient decrease condition. Should take a value
+#   between 0 and 1.
+# @param c2 Constant used in curvature condition. Should take a value between
+#   c1 and 1.
+# @return extrapolated step size.
+tweaked_extrapolation <- function(step0, step, ext, int) {
+  ext_alpha <- cubic_extrapolate_step(step0, step)
+  tweak_extrapolation(ext_alpha, step0$alpha, step$alpha, ext, int)
 }
 
-interpolate_step_size <- function(phi, step0, step3,
-                                  max_fn = 20,
-                                  c1, c2, INT) {
+# Interpolate Step Size to Meet Strong Wolfe Condition.
+#
+# @param phi Line function.
+# @param step0 Line search values at starting point of line search.
+# @param step Line search value at candiate step size.
+# @param c1 Constant used in sufficient decrease condition. Should take a value
+#   between 0 and 1.
+# @param c2 Constant used in curvature condition. Should take a value between
+#   c1 and 1.
+# @param int Interpolation constant. Prevents step size being too small.
+# @param max_fn Maximum number of function evaluations allowed.
+# @return List containing:
+# \itemize{
+#   \item step Valid step size or the last step size evaluated.
+#   \item nfn Number of function evaluations.
+# }
+interpolate_step_size <- function(phi, step0, step, c1, c2, int, max_fn = 20) {
   step2 <- step0
+  step3 <- step
   nfn <- 0
-  # keep interpolating
+
   while (!strong_wolfe_ok_step(step0, step3, c1, c2) && nfn < max_fn) {
-    # choose subinterval
     if (step3$d > 0 || !armijo_ok_step(step0, step3, c1)) {
-      #      message("step4<-3")
       step4 <- step3
     } else {
-      #      message("step2<-3")
       step2 <- step3
     }
 
-    #    message("s2 f = ", formatC(step2$f), " d = ", formatC(step2$d),
-    #            " s4 f = ", formatC(step4$f), " d = ", formatC(step4$d))
     if (step4$f > step0$f) {
-      #      message("quadratic interpolate")
       step3$alpha <- quadratic_interpolate_step(step2, step4)
     } else {
-      #      message("cubic interpolate")
       step3$alpha <- cubic_interpolate_step(step2, step4)
     }
 
-    #    message("pre-tweak = ", formatC(step3$alpha),
-    #            " a2 = ", formatC(step2$alpha),
-    #            " a4 = ", formatC(step4$alpha))
-    step3$alpha <- tweak_interpolation(step3$alpha, step2$alpha, step4$alpha, INT)
-    #   message("post-tweak = ", formatC(step3$alpha))
-
+    step3$alpha <- tweak_interpolation(step3$alpha, step2$alpha, step4$alpha, int)
     step3 <- phi(step3$alpha)
     nfn <- nfn + 1
   }
   list(step = step3, nfn = nfn)
 }
 
-
-ras_ls <- function(phi, alpha, step0, max_fn = 20,
-                   c1 = 0.1, c2 = 0.1 / 2, EXT = 3.0, INT = 0.1) {
+# Rasmussen Line Search
+#
+# Line Search Method
+#
+# @param phi Line function.
+# @param alpha Initial guess for step size.
+# @param step0 Line search values at starting point of line search.
+# @param c1 Constant used in sufficient decrease condition. Should take a value
+#   between 0 and 1.
+# @param c2 Constant used in curvature condition. Should take a value between
+#   c1 and 1.
+# @param ext Extrapolation constant. Prevents step size extrapolation being
+#   too large.
+# @param int Interpolation constant. Prevents step size being too small.
+# @param max_fn Maximum number of function evaluations allowed.
+# @return List containing:
+# \itemize{
+#   \item step Valid step size or the last step size evaluated.
+#   \item nfn Number of function evaluations.
+# }
+ras_ls <- function(phi, alpha, step0, c1 = 0.1, c2 = 0.1 / 2, ext = 3.0,
+                   int = 0.1, max_fn = 20) {
   if (c2 < c1) {
     stop("Rasmussen line search: c2 < c1")
   }
 
   # extrapolate from initial alpha until either curvature condition is met
   # or the armijo condition is NOT met
-  ex_result <- extrapolate_step_size(phi, alpha, step0,
-                                     max_fn,
-                                     c1, c2, EXT, INT)
+  ex_result <- extrapolate_step_size(phi, alpha, step0, c1, c2, ext, int,
+                                     max_fn)
 
   step <- ex_result$step
   nfn <- ex_result$nfn
@@ -109,20 +178,32 @@ ras_ls <- function(phi, alpha, step0, max_fn = 20,
   }
 
   # interpolate until the Strong Wolfe conditions are met
-  int_result <- interpolate_step_size(phi, step0, step, max_fn,
-                                      c1, c2, INT)
+  int_result <- interpolate_step_size(phi, step0, step, c1, c2, int, max_fn)
   int_result$nfn <- int_result$nfn + nfn
   int_result
 }
 
 
-rasmussen <- function(c1 = c2 / 2, c2 = 0.1,
-                      INT = 0.1, EXT = 3.0, max_fn = 20) {
+# Rasmussen Line Search
+#
+# Line Search Factory Function
+#
+# @param c1 Constant used in sufficient decrease condition. Should take a value
+#   between 0 and 1.
+# @param c2 Constant used in curvature condition. Should take a value between
+#   c1 and 1.
+# @param ext Extrapolation constant. Prevents step size extrapolation being
+#   too large.
+# @param int Interpolation constant. Prevents step size being too small.
+# @param max_fn Maximum number of function evaluations allowed.
+# @return Line search function for use in the conjugate gradient routine.
+rasmussen <- function(c1 = c2 / 2, c2 = 0.1, int = 0.1, ext = 3.0,
+                      max_fn = 20) {
   if (c2 < c1) {
     stop("rasmussen line search: c2 < c1")
   }
   function(phi, step0, alpha) {
-    ras_ls(phi, alpha, step0, max_fn, c1, c2, EXT, INT)
+    ras_ls(phi, alpha, step0, c1, c2, ext, int, max_fn)
   }
 }
 
