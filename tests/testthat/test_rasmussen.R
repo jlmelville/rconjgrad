@@ -9,16 +9,6 @@ expect_step <- function(actual, x, f, df, alpha, nfev, tolerance = 1e-4) {
   expect_equal(actual$nfn, nfev)
 }
 
-step <- function(x, f, df, alpha, nfev) {
-  list(x = x, step = list(f = f, df = df, alpha = alpha), nfev = nfev)
-}
-
-fcn <- function(x) {
-  list(f = rosenbrock_banana$fr(x), g = rosenbrock_banana$grr(x))
-}
-rfn <- rosenbrock_banana$fr
-rgr <- rosenbrock_banana$grr
-
 rls <- function(fn, gr, x, pv, alpha, c1, c2) {
   ras_ls(phi = make_phi(fn, gr, x, pv),
                    alpha,

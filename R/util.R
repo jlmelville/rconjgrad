@@ -44,18 +44,3 @@ make_phi <- function(fn, gr, par, pv, debug = FALSE, ...) {
     list(f = f, df = df, d = d, alpha = alpha, x = xa)
   }
 }
-
-# Create Initial Step Value
-#
-# Given a set of start parameters and a search direction, initializes the
-# step data. Utility function for testing.
-make_step0 <- function(fn, gr, x, pv, f = fn(x), df = gr(x)) {
-  list(
-    x = x,
-    alpha = 0,
-    f = f,
-    df = df,
-    d = dot(pv, df)
-  )
-}
-

@@ -18,9 +18,6 @@ step <- function(x, f, df, alpha, nfev) {
   list(x = x, step = list(f = f, df = df, alpha = alpha), nfev = nfev)
 }
 
-fcn <- function(x) {
-  list(f = rosenbrock_banana$fr(x), g = rosenbrock_banana$grr(x))
-}
 rfn <- rosenbrock_banana$fr
 rgr <- rosenbrock_banana$grr
 
