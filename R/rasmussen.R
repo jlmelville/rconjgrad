@@ -1,7 +1,7 @@
-find_sane <- function(phi_alpha, alpha, min_alpha = 0, max_fn = 20) {
+find_sane <- function(phi, alpha, min_alpha = 0, max_fn = 20) {
   nfn <- 0
   while (nfn < max_fn) {
-    step <- phi_alpha(alpha)
+    step <- phi(alpha)
     if (is.nan(step$f)) {
       step$f <- Inf
     }
@@ -17,7 +17,7 @@ find_sane <- function(phi_alpha, alpha, min_alpha = 0, max_fn = 20) {
   list(step = step, nfn = nfn)
 }
 
-extrapolate_step_size <- function(phi_alpha, alpha, step0,
+extrapolate_step_size <- function(phi, alpha, step0,
                                   max_fn = 20,
                                   c1, c2, EXT, INT) {
   step <- list(alpha = alpha)
@@ -25,7 +25,7 @@ extrapolate_step_size <- function(phi_alpha, alpha, step0,
   # keep a count of number of function evaluations
   nfn <- 0
   while (1) {
-    sane_result <- find_sane(phi_alpha, step$alpha, max_fn, min_alpha = 0)
+    sane_result <- find_sane(phi, step$alpha, max_fn, min_alpha = 0)
     nfn <- nfn + sane_result$nfn
     max_fn <- max_fn - sane_result$nfn
     step <- sane_result$step
@@ -42,31 +42,23 @@ extrapolate_step_size <- function(phi_alpha, alpha, step0,
 }
 
 extrapolation_ok <- function(step0, step_a, c1, c2) {
-  #  message("curvature ok?")
-  #  if (curvature_oks(step0, step_a, c2)) {
-  #   message("Curvature is ok, stopping extrapolation")
-  #  }
-  #  message("armijo ok?")
-  # if (!armijo_oks(step0, step_a, c1)) {
-  #   message("Armijo is not ok, stopping extrapolation")
-  # }
-  curvature_oks(step0, step_a, c2) || !armijo_oks(step0, step_a, c1)
+  curvature_ok_step(step0, step_a, c2) || !armijo_ok_step(step0, step_a, c1)
 }
 
 tweaked_extrapolation <- function(step0, step3, EXT, INT) {
-  ext_alpha <- cubic_extrapolates(step0, step3)
+  ext_alpha <- cubic_extrapolate_step(step0, step3)
   tweak_extrapolation(ext_alpha, step0$alpha, step3$alpha, EXT, INT)
 }
 
-interpolate_step_size <- function(phi_alpha, step0, step3,
+interpolate_step_size <- function(phi, step0, step3,
                                   max_fn = 20,
                                   c1, c2, INT) {
   step2 <- step0
   nfn <- 0
   # keep interpolating
-  while (!strong_wolfe_oks(step0, step3, c1, c2) && nfn < max_fn) {
+  while (!strong_wolfe_ok_step(step0, step3, c1, c2) && nfn < max_fn) {
     # choose subinterval
-    if (step3$d > 0 || !armijo_oks(step0, step3, c1)) {
+    if (step3$d > 0 || !armijo_ok_step(step0, step3, c1)) {
       #      message("step4<-3")
       step4 <- step3
     } else {
@@ -78,10 +70,10 @@ interpolate_step_size <- function(phi_alpha, step0, step3,
     #            " s4 f = ", formatC(step4$f), " d = ", formatC(step4$d))
     if (step4$f > step0$f) {
       #      message("quadratic interpolate")
-      step3$alpha <- quadratic_interpolates(step2, step4)
+      step3$alpha <- quadratic_interpolate_step(step2, step4)
     } else {
       #      message("cubic interpolate")
-      step3$alpha <- cubic_interpolates(step2, step4)
+      step3$alpha <- cubic_interpolate_step(step2, step4)
     }
 
     #    message("pre-tweak = ", formatC(step3$alpha),
@@ -90,38 +82,34 @@ interpolate_step_size <- function(phi_alpha, step0, step3,
     step3$alpha <- tweak_interpolation(step3$alpha, step2$alpha, step4$alpha, INT)
     #   message("post-tweak = ", formatC(step3$alpha))
 
-    step3 <- phi_alpha(step3$alpha)
+    step3 <- phi(step3$alpha)
     nfn <- nfn + 1
   }
   list(step = step3, nfn = nfn)
 }
 
 
-ras_ls <- function(phi_alpha, alpha, step0, max_fn = 20,
+ras_ls <- function(phi, alpha, step0, max_fn = 20,
                    c1 = 0.1, c2 = 0.1 / 2, EXT = 3.0, INT = 0.1) {
-  #  message("initial alpha = ", formatC(alpha))
-
   if (c2 < c1) {
     stop("Rasmussen line search: c2 < c1")
   }
 
-  #message("Extrapolating")
   # extrapolate from initial alpha until either curvature condition is met
   # or the armijo condition is NOT met
-  ex_result <- extrapolate_step_size(phi_alpha, alpha, step0,
+  ex_result <- extrapolate_step_size(phi, alpha, step0,
                                      max_fn,
                                      c1, c2, EXT, INT)
 
-  step3 <- ex_result$step
+  step <- ex_result$step
   nfn <- ex_result$nfn
   max_fn <- max_fn - nfn
   if (max_fn <= 0) {
     return(ex_result)
   }
 
-  #  message("alpha ext = ", formatC(step3$alpha))
   # interpolate until the Strong Wolfe conditions are met
-  int_result <- interpolate_step_size(phi_alpha, step0, step3, max_fn,
+  int_result <- interpolate_step_size(phi, step0, step, max_fn,
                                       c1, c2, INT)
   int_result$nfn <- int_result$nfn + nfn
   int_result

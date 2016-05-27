@@ -219,7 +219,7 @@ cvsrch <- function(phi, step0, alpha = 1,
 
     # In the first stage we seek a step for which the modified
     # function has a nonpositive value and nonnegative derivative.
-    if (stage1 && armijo_oks(step0, step, c1) && step$df >= min(c1, c2) * d0) {
+    if (stage1 && armijo_ok_step(step0, step, c1) && step$df >= min(c1, c2) * d0) {
       stage1 <- FALSE
     }
 
@@ -228,7 +228,7 @@ cvsrch <- function(phi, step0, alpha = 1,
     # function has a nonpositive function value and nonnegative
     # derivative, and if a lower function value has been
     # obtained but the decrease is not sufficient.
-    if (stage1 && step$f <= stepx$f && !armijo_oks(step0, step, c1)) {
+    if (stage1 && step$f <= stepx$f && !armijo_ok_step(step0, step, c1)) {
       # Define the modified function and derivative values.
       nmt <- nmt + 1
 
@@ -319,11 +319,11 @@ check_convergence <- function(step0, step, brackt, infoc, stmin, stmax,
     # rounding errors prevent further progress
     info <- 6
   }
-  if (step$alpha == alpha_max && armijo_oks(step0, step, c1) && step$d <= dgtest) {
+  if (step$alpha == alpha_max && armijo_ok_step(step0, step, c1) && step$d <= dgtest) {
     # reached alpha_max
     info <- 5
   }
-  if (step$alpha == alpha_min && (!armijo_oks(step0, step, c1) || step$d >= dgtest)) {
+  if (step$alpha == alpha_min && (!armijo_ok_step(step0, step, c1) || step$d >= dgtest)) {
     # reached alpha_min
     info <- 4
   }
@@ -335,13 +335,17 @@ check_convergence <- function(step0, step, brackt, infoc, stmin, stmax,
     # interval width is below xtol
     info <- 2
   }
-  if (strong_wolfe_oks(step0, step, c1, c2)) {
+  if (strong_wolfe_ok_step(step0, step, c1, c2)) {
     # success!
     info <- 1
   }
   info
 }
 
+# @references
+# More, J. J., & Thuente, D. J. (1994).
+# Line search algorithms with guaranteed sufficient decrease.
+# \emph{ACM Transactions on Mathematical Software (TOMS)}, \emph{20}(3), 286-307.
 more_thuente <- function(c1 = 1e-4, c2 = 0.1) {
   function(phi, step0, alpha) {
     cvsrch(phi, step0, alpha = alpha, c1 = c1, c2 = c2)
