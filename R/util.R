@@ -1,11 +1,32 @@
+# Dot Product
+#
+# Returns the dot product of two vectors.
+#
+# @param a Numeric vector.
+# @param b Numeric vector of the same dimensions as a.
+# @return Dot product of \code{a} and \code{b}.
 dot <- function(a, b) {
-  sum(t(a) %*% b)
+  sum(a * b)
 }
 
+# Prints out a vector. For debugging purposes.
 format_vec <- function(vec) {
   paste(formatC(vec), collapse = ' ')
 }
 
+# Construct Line Function
+#
+# Factory function for line function. Returns a 1D function of alpha, the step
+# size, the return value of which is a list containing the function value,
+# directional derivative, and other values calculated for that distance
+# along the search direction.
+#
+# @param fn Function.
+# @param gr Gradient.
+# @param par Vector of parameters.
+# @param debug If TRUE, log information about the line search values.
+# @param ... Other parameters to pass to fn and gr when they are invoked.
+# @return Line function.
 make_phi <- function(fn, gr, par, pv, debug = FALSE, ...) {
   function(alpha) {
     xa <- par + alpha * pv
@@ -24,6 +45,10 @@ make_phi <- function(fn, gr, par, pv, debug = FALSE, ...) {
   }
 }
 
+# Create Initial Step Value
+#
+# Given a set of start parameters and a search direction, initializes the
+# step data. Utility function for testing.
 make_step0 <- function(fn, gr, x, pv, f = fn(x), df = gr(x)) {
   list(
     x = x,
@@ -34,18 +59,3 @@ make_step0 <- function(fn, gr, x, pv, f = fn(x), df = gr(x)) {
   )
 }
 
-
-# max_alpha <- function(fcn, am, mu) {
-#   v <- fcn(0)
-#   (v$f - fcn(am)$f)/(-mu *  v$g)
-# }
-
-# fd <- function(f, d = 1e-6) {
-#   function(par) {
-#     (f(par + d) - f(par - d)) / (2 * d)
-#   }
-# }
-
-# mvec <- function(vec) {
-#   paste(vec, collapse = '; ')
-# }
