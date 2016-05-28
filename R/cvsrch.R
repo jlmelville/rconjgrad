@@ -28,7 +28,8 @@
 #' }
 more_thuente <- function(c1 = 1e-4, c2 = 0.1) {
   function(phi, step0, alpha) {
-    cvsrch(phi, step0, alpha = alpha, c1 = c1, c2 = c2)
+    res <- cvsrch(phi, step0, alpha = alpha, c1 = c1, c2 = c2)
+    list(step = res$step, nfn = res$nfn, ngr = res$nfn)
   }
 }
 

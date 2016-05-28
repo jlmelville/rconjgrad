@@ -2,9 +2,27 @@
 #'
 #' Optimization method.
 #
-#' Uses the formula of Polak and Ribiere. Generally considered a better choice
-#' than the Fletcher-Reeves method.
-#
+#' Conjugate gradient optimimzation routine. A translation and slight
+#' modification of the Matlab code \code{minimize.m} by
+#' \href{http://learning.eng.cam.ac.uk/carl/code/minimize/}{Carl Edward Rasmussen}.
+#'
+#' @details
+#' The \code{line_search} parameter takes one of two string values indicating
+#' the type of line search function desired: either the original line search
+#' from the Matlab code, or the modified More'-Thuente line search algorithm
+#' implemented in MINPACK.
+#'
+#' Alternatively, you may provide your own line search function. Doing so
+#' requires some knowledge of internal interfaces, which is described in the
+#' package help documentation which can be accessed via the following help
+#' command:
+#'
+#' \code{package?rcgmin}
+#'
+#' Factory functions that generate a suitable line search function for the
+#' existing line search methods are \code{\link{more_thuente}} and
+#' \code{\link{rasmussen}}.
+#'
 #' @param par Vector of initial numeric parameters.
 #' @param fn Function to optimize. Should take a vector of the length of
 #'  \code{par} and return a scalar numeric value.
@@ -24,8 +42,15 @@
 #' @param reltol Relative tolerance. If not \code{NULL}, then optimization will
 #'  stop early if the relative decrease in the value of \code{fn} on successive
 #'  iterations falls below this value.
-#' @param line_search Line search function. Assign the result of calling
-#'  \code{\link{more_thuente}} or \code{\link{rasmussen}}.
+#' @param line_search Line search type. Can be one of
+#'  \itemize{
+#'    \item \code{"r"} The Rasmussen line search as originally implemented in
+#'    the original Matlab code.
+#'    \item \code{"mt"} More'-Thuente line search as originally implemented in
+#'    MINPACK.
+#'  }
+#' You may also assign a line search function directly to this parameter. See
+#' 'Details' for more information.
 #' @param ortho_restart If \code{TRUE}, then if successive conjugate gradient
 #'  directions are not sufficiently orthogonal, reset the search direction to
 #'  steepest descent.
@@ -86,12 +111,21 @@
 #' res$counts # c(79, 79) 79 fn and 79 gr evaluations
 #'
 #' # Use More'-Thuente line search with typical CG Wolfe parameters mentioned
-#' # in Nocedal and Wright's book on numerical optimization
+#' # in Nocedal and Wright's book on numerical optimization.
+#' res <- conj_grad(par = c(-1.2, 1),
+#'                  fn = rosenbrock_banana$fr, gr = rosenbrock_banana$grr,
+#'                  line_search = "mt",
+#'                  c1 = 1e-4, c2 = 0.1)
+#' \dontrun{
+#' # Can pass a function to line_search if you want to write your own
+#' # line search function. This example is the same as the previous one, but
+#' # uses the More-Thuente factory function.
 #' # Yes, you do have to specify c1 and c2 in two separate places. Sorry.
 #' res <- conj_grad(par = c(-1.2, 1),
 #'                  fn = rosenbrock_banana$fr, gr = rosenbrock_banana$grr,
 #'                  line_search = more_thuente(c1 = 1e-4, c2 = 0.1),
 #'                  c1 = 1e-4, c2 = 0.1)
+#' }
 conj_grad <- function(par, fn, gr,
                       c1 = c2 / 2,
                       c2 = 0.1,
@@ -100,14 +134,30 @@ conj_grad <- function(par, fn, gr,
                       max_alpha_mult = 10,
                       abstol = NULL,
                       reltol = sqrt(.Machine$double.eps),
-                      line_search = rasmussen(c1 = c1, c2 = c2),
+                      line_search = "r",
                       ortho_restart = FALSE, nu = 0.1,
                       prplus = FALSE,
                       eps = .Machine$double.eps,
                       verbose = FALSE, debug = FALSE,
                       ...) {
-  nfn <- 0
 
+  if (class(line_search) == "character") {
+    line_search <- tolower(line_search)
+    if (line_search == "mt") {
+      line_search <- more_thuente(c1 = c1, c2 = c2)
+    }
+    else if (line_search == "r") {
+      line_search <- rasmussen(c1 = c1, c2 = c2)
+    }
+    else {
+      stop("Unknown line_search type '", line_search, "'")
+    }
+  }
+  else if (class(line_search) != "function") {
+    stop("line_search parameter must be either a valid string or a function")
+  }
+  nfn <- 0
+  ngr <- 0
   # calculate function value and gradient at initial location
   f0 <- fn(par, ...)
   if (is.nan(f0)) {
@@ -115,6 +165,7 @@ conj_grad <- function(par, fn, gr,
   }
   df0 <- gr(par, ...)
   nfn <- nfn + 1
+  ngr <- ngr + 1
   # pv is the descent direction (steepest initially)
   # d0 is the directional derivative (phi')
   pv <- -df0
@@ -136,6 +187,7 @@ conj_grad <- function(par, fn, gr,
 
     step <- ls_result$step
     nfn <- nfn + ls_result$nfn
+    ngr <- ngr + ls_result$ngr
 
     if (!strong_wolfe_ok_step(step0, step, c1, c2)) {
       if (verbose) {
@@ -223,7 +275,7 @@ conj_grad <- function(par, fn, gr,
   }
 
   list(par = par, value = fX[length(fX)], values = fX, iter = iter,
-       counts = c(nfn, nfn))
+       counts = c(nfn, ngr))
 }
 
 # Polak-Ribiere Update

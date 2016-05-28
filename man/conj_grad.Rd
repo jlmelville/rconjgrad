@@ -6,9 +6,8 @@
 \usage{
 conj_grad(par, fn, gr, c1 = c2/2, c2 = 0.1, max_iter = 100, red = 1,
   max_alpha_mult = 10, abstol = NULL, reltol = sqrt(.Machine$double.eps),
-  line_search = rasmussen(c1 = c1, c2 = c2), ortho_restart = FALSE,
-  nu = 0.1, prplus = FALSE, eps = .Machine$double.eps, verbose = FALSE,
-  debug = FALSE, ...)
+  line_search = "r", ortho_restart = FALSE, nu = 0.1, prplus = FALSE,
+  eps = .Machine$double.eps, verbose = FALSE, debug = FALSE, ...)
 }
 \arguments{
 \item{par}{Vector of initial numeric parameters.}
@@ -40,8 +39,15 @@ stop early if the return value of \code{fn} falls below this value.}
 stop early if the relative decrease in the value of \code{fn} on successive
 iterations falls below this value.}
 
-\item{line_search}{Line search function. Assign the result of calling
-\code{\link{more_thuente}} or \code{\link{rasmussen}}.}
+\item{line_search}{Line search type. Can be one of
+ \itemize{
+   \item \code{"r"} The Rasmussen line search as originally implemented in
+   the original Matlab code.
+   \item \code{"mt"} More'-Thuente line search as originally implemented in
+   MINPACK.
+ }
+You may also assign a line search function directly to this parameter. See
+'Details' for more information.}
 
 \item{ortho_restart}{If \code{TRUE}, then if successive conjugate gradient
 directions are not sufficiently orthogonal, reset the search direction to
@@ -82,8 +88,26 @@ List containing:
 }
 \description{
 Optimization method.
-Uses the formula of Polak and Ribiere. Generally considered a better choice
-than the Fletcher-Reeves method.
+Conjugate gradient optimimzation routine. A translation and slight
+modification of the Matlab code \code{minimize.m} by
+\href{http://learning.eng.cam.ac.uk/carl/code/minimize/}{Carl Edward Rasmussen}.
+}
+\details{
+The \code{line_search} parameter takes one of two string values indicating
+the type of line search function desired: either the original line search
+from the Matlab code, or the modified More'-Thuente line search algorithm
+implemented in MINPACK.
+
+Alternatively, you may provide your own line search function. Doing so
+requires some knowledge of internal interfaces, which is described in the
+package help documentation which can be accessed via the following help
+command:
+
+\code{package?rcgmin}
+
+Factory functions that generate a suitable line search function for the
+existing line search methods are \code{\link{more_thuente}} and
+\code{\link{rasmussen}}.
 }
 \examples{
 # The venerable Rosenbrock Banana function
@@ -116,11 +140,20 @@ res$iter # 19 iterations
 res$counts # c(79, 79) 79 fn and 79 gr evaluations
 
 # Use More'-Thuente line search with typical CG Wolfe parameters mentioned
-# in Nocedal and Wright's book on numerical optimization
+# in Nocedal and Wright's book on numerical optimization.
+res <- conj_grad(par = c(-1.2, 1),
+                 fn = rosenbrock_banana$fr, gr = rosenbrock_banana$grr,
+                 line_search = "mt",
+                 c1 = 1e-4, c2 = 0.1)
+\dontrun{
+# Can pass a function to line_search if you want to write your own
+# line search function. This example is the same as the previous one, but
+# uses the More-Thuente factory function.
 # Yes, you do have to specify c1 and c2 in two separate places. Sorry.
 res <- conj_grad(par = c(-1.2, 1),
                  fn = rosenbrock_banana$fr, gr = rosenbrock_banana$grr,
                  line_search = more_thuente(c1 = 1e-4, c2 = 0.1),
                  c1 = 1e-4, c2 = 0.1)
+}
 }
 
