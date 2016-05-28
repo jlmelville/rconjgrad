@@ -7,7 +7,34 @@
 #
 # This routine is a translation of Dianne O'Leary's Matlab code, which was
 # itself a translation of the MINPACK original. Original comments to the Matlab
-# code are below.
+# code are at the end.
+#
+# @param stepx One side of the updated step interval, and the associated
+#     line search values.
+# @param stepy Other side of the updated step interval, and the
+#     associated line search values.
+# @param step Optimal step size and associated line search
+#     value.
+# @param brackt TRUE if the interval has been bracketed.
+# @param stpmin Minimum allowed interval length.
+# @param stpmax Maximum allowed interval length.
+# @return List containing:
+# \itemize{
+#   \item \code{stepx} One side of the updated step interval, and the associated
+#     line search values.
+#   \item \code{stepy} Other side of the updated step interval, and the
+#     associated line search values.
+#   \item \code{step} Updated optimal step size and associated line search
+#     value.
+#   \item \code{brackt} TRUE if the interval has been bracketed.
+#   \item \code{info} Integer return code.
+# }
+# The possible integer return codes refer to the cases 1-4 enumerated in the
+# original More'-Thuente paper that correspond to different line search values
+# at the ends of the interval and the current best step size (and therefore
+# the type of cubic or quadratic interpolation). An integer value of 0 indicates
+# that the input parameters are invalid.
+#
 #
 #   Translation of minpack subroutine cstep
 #   Dianne O'Leary   July 1991
@@ -88,10 +115,14 @@ cstep <-  function(stepx, stepy, step, brackt, stpmin, stpmax) {
   delta <- 0.66
   info <- 0
   # Check the input parameters for errors.
-  if ((brackt && (stp <= min(stx,sty) ||
-                  stp >= max(stx,sty))) ||
+  if ((brackt && (stp <= min(stx, sty) ||
+                  stp >= max(stx, sty))) ||
       dx * (stp - stx) >= 0.0 || stpmax < stpmin) {
-    stop("Parameters make no sense")
+    list(
+      stepx = stepx,
+      stepy = stepy,
+      step = step,
+      brackt = brackt, info = info)
   }
   # Determine if the derivatives have opposite sign.
   sgnd <- dp * (dx / abs(dx))

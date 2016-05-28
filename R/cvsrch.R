@@ -1,3 +1,62 @@
+#' More'-Thuente Line Search
+#'
+#' Line Search Factory Function
+#'
+#' Returns a line search function that can be used in the
+#'  \code{\link{conj_grad}} function. This uses a variant of the More-Thuente
+#'  line search originally implemented in
+#'  \href{http://www.netlib.org/minpack/}{MINPACK}.
+#'
+#' @param c1 Constant used in sufficient decrease condition. Should take a value
+#'   between 0 and 1.
+#' @param c2 Constant used in curvature condition. Should take a value between
+#'   \code{c1} and 1.
+#' @return Line search function for use in the conjugate gradient routine.
+#' @export
+#' @references
+#' More, J. J., & Thuente, D. J. (1994).
+#' Line search algorithms with guaranteed sufficient decrease.
+#' \emph{ACM Transactions on Mathematical Software (TOMS)}, \emph{20}(3),
+#' 286-307.
+#' @seealso This code is based on a translation of the original MINPACK code
+#'  for Matlab by
+#'  \href{https://www.cs.umd.edu/users/oleary/software/}{Dianne O'Leary}.
+#' @examples
+#' \dontrun{
+#'  # assign to the line_search parameter in conj_grad:
+#'  conj_grad(line_search = more_thuente(c1 = 0.05, c2 = 0.1), ...)
+#' }
+more_thuente <- function(c1 = 1e-4, c2 = 0.1) {
+  function(phi, step0, alpha) {
+    cvsrch(phi, step0, alpha = alpha, c1 = c1, c2 = c2)
+  }
+}
+
+# More'-Thuente Line Search
+#
+# This routine is a translation of Dianne O'Leary's Matlab code, which was
+# itself a translation of the MINPACK original. Original comments to the Matlab
+# code are at the end.
+# @param phi Line function.
+# @param step0 Line search values at starting point of line search.
+# @param alpha Initial guess for step size.
+# @param c1 Constant used in sufficient decrease condition. Should take a value
+#   between 0 and 1.
+# @param c2 Constant used in curvature condition. Should take a value between
+#   c1 and 1.
+# @param xtol Relative width tolerance: convergence is reached if width falls
+#   below xtol * maximum step size.
+# @param alpha_min Smallest acceptable value of the step size.
+# @param alpha_max Largest acceptable value of the step size.
+# @param maxfev Maximum number of function evaluations allowed.
+# @param delta Value to force sufficient decrease of interval size on
+#   successive iterations. Should be a positive value less than 1.
+# @return List containing:
+# \itemize{
+#   \item \code{step} Best step found and associated line search info.
+#   \item \code{info} Return code from convergence check.
+#   \item \code{nfn}  Number of function evaluations.
+# }
 #   Translation of minpack subroutine cvsrch
 #   Dianne O'Leary   July 1991
 #     **********
@@ -177,9 +236,6 @@ cvsrch <- function(phi, step0, alpha = 1,
   stepy <- step0
   step <- list(alpha = alpha)
 
-  mt <- 0
-  nmt <- 0
-
   #     Start of iteration.
   iter <- 0
   while (1) {
@@ -214,7 +270,7 @@ cvsrch <- function(phi, step0, alpha = 1,
       if (info == 2 || info == 3 || info == 6) {
         step <- stepx
       }
-      return(list(step = step, info = info, nfn = nfev, mt = mt, nmt = nmt))
+      return(list(step = step, info = info, nfn = nfev))
     }
 
     # In the first stage we seek a step for which the modified
@@ -230,7 +286,6 @@ cvsrch <- function(phi, step0, alpha = 1,
     # obtained but the decrease is not sufficient.
     if (stage1 && step$f <= stepx$f && !armijo_ok_step(step0, step, c1)) {
       # Define the modified function and derivative values.
-      nmt <- nmt + 1
 
       stepxm <- modify_step(stepx, dgtest)
       stepym <- modify_step(stepy, dgtest)
@@ -245,13 +300,12 @@ cvsrch <- function(phi, step0, alpha = 1,
       stepm <- step_result$step
 
       # Reset the function and gradient values for f.
-      stepx <- unmodify_step(stepx, stepxm, dgtest)
-      stepy <- unmodify_step(stepy, stepym, dgtest)
+      stepx <- unmodify_step(stepxm, dgtest)
+      stepy <- unmodify_step(stepym, dgtest)
       step$alpha <- stepm$alpha
     } else {
       # Call cstep to update the interval of uncertainty
       # and to compute the new step.
-      mt <- mt + 1
       step_result <- cstep(stepx, stepy, step, brackt, stmin, stmax)
       brackt <- step_result$brackt
       infoc <- step_result$info
@@ -274,6 +328,16 @@ cvsrch <- function(phi, step0, alpha = 1,
   }
 }
 
+
+# Modify Line Search Values
+#
+# Modifies a line search function and directional derivative value.
+# Used by MINPACK version of More'-Thuente line search algorithm.
+#
+# @param step Line search information.
+# @param dgtest Product of the initial line search directional derivative and
+#   the sufficent decrease condition constant.
+# @return Modified step size.
 modify_step <- function(step, dgtest) {
   stepm <- step
   stepm$f <- step$f - step$alpha * dgtest
@@ -281,36 +345,54 @@ modify_step <- function(step, dgtest) {
   stepm
 }
 
-unmodify_step <- function(step, stepm, dgtest) {
-  step$f <- stepm$f + stepm$alpha * dgtest
-  step$d <- stepm$d + dgtest
-  step$alpha <- stepm$alpha
-  step
+# Un-modify Line Search Values
+#
+# Un-modifies a line search function and directional derivative value that was
+# modified by the modify_step function. Used by MINPACK version of More'-Thuente
+# line search algorithm.
+#
+# @param stepm Modified line search information.
+# @param dgtest Product of the initial line search directional derivative and
+#   the sufficent decrease condition constant.
+# @return Unmodified step size.
+unmodify_step <- function(stepm, dgtest) {
+  stepm$f <- stepm$f + stepm$alpha * dgtest
+  stepm$d <- stepm$d + dgtest
+  stepm
 }
 
-
-#	  info = 1  The sufficient decrease condition and the
-#                   directional derivative condition hold.
+# Check Convergence of More'-Thuente Line Search
 #
-#	  info = 2  Relative width of the interval of uncertainty
+# @param step0 Line search values at starting point.
+# @param step Line search value at a step along the line.
+# @param brackt TRUE if the step has been bracketed.
+# @param infoc Return code of the last step size update.
+# @param stmin Smallest value of the step size interval.
+# @param stmax Largest value of the step size interval.
+# @param alpha_min Smallest acceptable value of the step size.
+# @param alpha_max Largest acceptable value of the step size.
+# @param c1 Constant used in sufficient decrease condition. Should take a value
+#   between 0 and 1.
+# @param c2 Constant used in curvature condition. Should take a value between
+#   c1 and 1.
+# @param dgtest Product of the initial line search directional derivative and
+#   the sufficent decrease condition constant.
+# @param nfev Current number of function evaluations.
+# @param maxfev Maximum number of function evaluations allowed.
+# @param xtol Relative width tolerance: convergence is reached if width falls
+#   below xtol * stmax.
+# @return Integer code indicating convergence state:
+#  \itemize{
+#   \item \code{0} No convergence.
+#   \item \code{1} The sufficient decrease condition and the directional
+#     derivative condition hold.
+#	  \item \code{2} Relative width of the interval of uncertainty
 #		    is at most xtol.
-#
-#	  info = 3  Number of calls to fcn has reached maxfev.
-#
-#	  info = 4  The step is at the lower bound alpha_min.
-#
-#	  info = 5  The step is at the upper bound alpha_max.
-#
-#	  info = 6  Rounding errors prevent further progress.
-#
-#   There are four classes of convergence information:
-#   info = 0          No convergence yet.
-#   info = 1          Success: convergence with the step size in the interval
-#                     and  meeting the Strong Wolfe conditions.
-#   info = 4 or 5     Reached either maximum and minimnum step size.
-#   info = 2, 3 or 6  Unusual termination: reached maximum numer of function
-#                     evaluations, rounding errors, or relative interval width
-#                     is below machine tolerance.
+#	  \item \code{3} Number of calls to fcn has reached maxfev.
+#	  \item \code{4} The step is at the lower bound alpha_min.
+#	  \item \code{5} The step is at the upper bound alpha_max.
+#	  \item \code{6} Rounding errors prevent further progress.
+# }
 check_convergence <- function(step0, step, brackt, infoc, stmin, stmax,
                               alpha_min, alpha_max, c1, c2, dgtest, nfev,
                               maxfev, xtol) {
@@ -341,15 +423,3 @@ check_convergence <- function(step0, step, brackt, infoc, stmin, stmax,
   }
   info
 }
-
-# @references
-# More, J. J., & Thuente, D. J. (1994).
-# Line search algorithms with guaranteed sufficient decrease.
-# \emph{ACM Transactions on Mathematical Software (TOMS)}, \emph{20}(3), 286-307.
-more_thuente <- function(c1 = 1e-4, c2 = 0.1) {
-  function(phi, step0, alpha) {
-    cvsrch(phi, step0, alpha = alpha, c1 = c1, c2 = c2)
-  }
-}
-
-

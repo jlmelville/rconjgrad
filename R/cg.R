@@ -1,16 +1,110 @@
+#' Conjugate Gradient Minimization
+#'
+#' Optimization method.
+#
+#' Uses the formula of Polak and Ribiere. Generally considered a better choice
+#' than the Fletcher-Reeves method.
+#
+#' @param par Vector of initial numeric parameters.
+#' @param fn Function to optimize. Should take a vector of the length of
+#'  \code{par} and return a scalar numeric value.
+#' @param gr Gradient of \code{fn}. Should take a vector of the length of
+#'  \code{par} and return a vector of the gradients with respect to each
+#'  parameter.
+#' @param c1 Constant used in sufficient decrease condition. Should take a value
+#'   between 0 and 1.
+#' @param c2 Constant used in curvature condition. Should take a value between
+#'   \code{c1} and 1.
+#' @param max_iter Maximum number of iterations to carry out the optimization.
+#' @param red Scalar to determine initial step size guess.
+#' @param max_alpha_mult Maximum scale factor to use when guessing the initial
+#'  step size for the next iteration.
+#' @param abstol Absolute tolerance. If not \code{NULL}, then optimization will
+#'  stop early if the return value of \code{fn} falls below this value.
+#' @param reltol Relative tolerance. If not \code{NULL}, then optimization will
+#'  stop early if the relative decrease in the value of \code{fn} on successive
+#'  iterations falls below this value.
+#' @param line_search Line search function. Assign the result of calling
+#'  \code{\link{more_thuente}} or \code{\link{rasmussen}}.
+#' @param ortho_restart If \code{TRUE}, then if successive conjugate gradient
+#'  directions are not sufficiently orthogonal, reset the search direction to
+#'  steepest descent.
+#' @param nu If the dot product of the old and new conjugate gradient direction
+#'  (normalized with respect to inner product of the new direction) exceeds
+#'  this value, then the two directions are considered non-orthogonal and the
+#'  search direction is reset to steepest descent. Only used if
+#'  \code{ortho_restart} is \code{TRUE}.
+#' @param prplus If \code{TRUE} then the 'PR+' variant of the Polak-Ribiere
+#'  update will be used: when the beta scale factor used to calculate the
+#'  new direction is negative, the search direction will be reset to
+#'  steepest descent.
+#' @param eps Epsilon for avoiding numerical issues.
+#' @param verbose If \code{TRUE} log information about the status of the
+#'  optimization at each iteration.
+#' @param debug If \code{TRUE} logs \emph{lots} of information about the status
+#'  of the optimization.
+#' @param ... Other parameters to pass to the \code{fn} and \code{gr} functions.
+#' @return List containing:
+#' \itemize{
+#'  \item \code{par} Optimized parameters.
+#'  \item \code{value} Return value of \code{fn} for the optimized parameters.
+#'  \item \code{values} Vector of return values of \code{fn} at each iteration
+#'    of the optimization.
+#'  \item \code{iter} Number of iterations optimization took place over.
+#'  \item \code{counts} Sublist of two values, giving the number of evaluations
+#'    of \code{fn} and \code{gr}, respectively.
+#' }
+#' @export
+#' @examples
+#' # The venerable Rosenbrock Banana function
+#' rosenbrock_banana <- list(
+#' fr = function(x) {
+#'  x1 <- x[1]
+#'  x2 <- x[2]
+#'  100 * (x2 - x1 * x1) ^ 2 + (1 - x1) ^ 2
+#' },
+#' grr = function(x) {
+#'  x1 <- x[1]
+#'  x2 <- x[2]
+#' c(-400 * x1 * (x2 - x1 * x1) - 2 * (1 - x1),
+#'    200 *      (x2 - x1 * x1))
+#' })
+#'
+#' # Default is to use Rasmussen line search with c1 = 0.05 and c2 = 0.1
+#' res <- conj_grad(par = c(-1.2, 1),
+#'                  fn = rosenbrock_banana$fr, gr = rosenbrock_banana$grr)
+#'
+#' # Turning down eps, abstol and reltol to compare with Matlab result at
+#' # http://learning.eng.cam.ac.uk/carl/code/minimize/
+#' res <- conj_grad(par = c(0, 0),
+#'                  fn = rosenbrock_banana$fr, gr = rosenbrock_banana$grr,
+#'                  eps = .Machine$double.xmin, reltol = .Machine$double.xmin,
+#'                  abstol = .Machine$double.xmin)
+#' res$par # c(1, 1)
+#' res$value # 1.232595e-32
+#' res$iter # 19 iterations
+#' res$counts # c(79, 79) 79 fn and 79 gr evaluations
+#'
+#' # Use More'-Thuente line search with typical CG Wolfe parameters mentioned
+#' # in Nocedal and Wright's book on numerical optimization
+#' # Yes, you do have to specify c1 and c2 in two separate places. Sorry.
+#' res <- conj_grad(par = c(-1.2, 1),
+#'                  fn = rosenbrock_banana$fr, gr = rosenbrock_banana$grr,
+#'                  line_search = more_thuente(c1 = 1e-4, c2 = 0.1),
+#'                  c1 = 1e-4, c2 = 0.1)
 conj_grad <- function(par, fn, gr,
                       c1 = c2 / 2,
                       c2 = 0.1,
                       max_iter = 100,
                       red = 1,
                       max_alpha_mult = 10,
-                      eps = .Machine$double.eps,
                       abstol = NULL,
                       reltol = sqrt(.Machine$double.eps),
-                      verbose = FALSE, debug = FALSE,
                       line_search = rasmussen(c1 = c1, c2 = c2),
                       ortho_restart = FALSE, nu = 0.1,
                       prplus = FALSE,
+                      eps = .Machine$double.eps,
+                      verbose = FALSE, debug = FALSE,
                       ...) {
   nfn <- 0
 
@@ -77,7 +171,6 @@ conj_grad <- function(par, fn, gr,
     ortho_test <- abs(dot(step$df, step0$df)) / dot(step$df, step$df)
 
     # update old values
-    #f_old <- step0$f
     d_old <- step0$d
     step0 <- step
     step0$alpha <- 0
@@ -133,7 +226,19 @@ conj_grad <- function(par, fn, gr,
        counts = c(nfn, nfn))
 }
 
+# Polak-Ribiere Update
+#
+# Scale factor applied to the previous conjugate gradient direction.
+#
+# Uses the formula of Polak and Ribiere. Generally considered a better choice
+# than the Fletcher-Reeves method.
+#
+# @param step0 Line search values at starting point of line search.
+# @param step Line search value at current step size.
+# @param eps Epsilon for avoiding numerical issues.
+# @return Beta parameter for conjugate gradient update.
 pr_update <- function(step0, step, eps = .Machine$double.eps) {
-  (dot(step$df, step$df) - dot(step$df, step0$df)) / (dot(step0$df, step0$df) + eps)
+  (dot(step$df, step$df) - dot(step$df, step0$df)) /
+    (dot(step0$df, step0$df) + eps)
 }
 
