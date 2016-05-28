@@ -148,9 +148,9 @@ quadratic_interpolateg <- function(x1, g1, x2, g2) {
 # @param xnew 1D position of the new point.
 # @param x1 1D position of the first points used in the extrapolation.
 # @param x2 1D position of the second point used in the extrapolation.
-# @param EXT Maximum multiple of \code{x2} that \code{xnew} is allowed to be
+# @param ext Maximum multiple of \code{x2} that \code{xnew} is allowed to be
 #  extrapolated to.
-# @param INT Given the distance between \code{x1} and \code{x2}, specified what
+# @param int Given the distance between \code{x1} and \code{x2}, specified what
 #  multiple of that distance is the minimum allowed distance for \code{xnew}
 #  from \code{x2}.
 # @return A value of \code{xnew} that obeys the minimum and maximum distance
