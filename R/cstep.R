@@ -1,3 +1,14 @@
+# Update the Bracketed Step
+#
+# Part of the More'-Thuente line search.
+#
+# Updates the interval of uncertainty of the current step size and updates the
+# current best step size.
+#
+# This routine is a translation of Dianne O'Leary's Matlab code, which was
+# itself a translation of the MINPACK original. Original comments to the Matlab
+# code are below.
+#
 #   Translation of minpack subroutine cstep
 #   Dianne O'Leary   July 1991
 #     **********
