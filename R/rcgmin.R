@@ -55,9 +55,26 @@
 #' conditions and extrapolation and interpolation checks.
 #'
 #' @section Line Function (Phi):
-#' 1D Line Search
+#' The line function, \code{phi} is a 1D function with the following signature:
+#'
+#' \code{function(alpha)}
+#'
+#' where \code{alpha} is the step size. The return value is a list containing
+#' information about the function evaluated at that step size. See the
+#' 'Line Search Information (Step)' section for details.
+#'
 #' @section Line Search Information (Step):
-#' Step function, gradient, directional derivative etc.
+#' The \code{step} list contains information about the function value at a
+#' specific step length alone the line search. It consists of:
+#' \itemize{
+#'  \item \code{alpha} Step length the function was evaluated at.
+#'  \item \code{par} Parameter vector at \code{alpha}.
+#'  \item \code{f} The value of the function \code{fn} at \code{alpha}.
+#'  \item \code{df} The value of the gradient function \code{gr} at
+#'    \code{alpha}.
+#'  \item \code{d} The value of the directional derivative at
+#'  (the gradient of the line function) at \code{alpha}.
+#' }
 #'
 #' @docType package
 #' @name rcgmin

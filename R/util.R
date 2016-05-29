@@ -41,6 +41,6 @@ make_phi <- function(fn, gr, par, pv, debug = FALSE, ...) {
         " df = ", format_vec(df),
         " d = ", formatC(d))
     }
-    list(f = f, df = df, d = d, alpha = alpha, x = xa)
+    list(f = f, df = df, d = d, alpha = alpha, par = xa)
   }
 }

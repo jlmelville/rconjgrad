@@ -197,7 +197,7 @@ conj_grad <- function(par, fn, gr,
     }
 
     # update variables
-    par <- par + step$alpha * pv
+    par <- step$par
     # update costs
     fX <- c(fX, step$f)
 

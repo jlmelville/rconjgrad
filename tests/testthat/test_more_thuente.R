@@ -7,7 +7,7 @@ context("More'-Thuente Line Search")
 # under GNU Octave).
 
 expect_step <- function(actual, x, f, df, alpha, nfev, tolerance = 1e-4) {
-  expect_equal(actual$step$x, x, tolerance = tolerance)
+  expect_equal(actual$step$par, x, tolerance = tolerance)
   expect_equal(actual$step$f, f, tolerance = tolerance)
   expect_equal(actual$step$df, df, tolerance = tolerance)
   expect_equal(actual$step$alpha, alpha, tolerance = tolerance)
