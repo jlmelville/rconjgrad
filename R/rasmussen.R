@@ -42,9 +42,9 @@ rasmussen <- function(c1 = c2 / 2, c2 = 0.1, int = 0.1, ext = 3.0,
     stop("rasmussen line search: c2 < c1")
   }
   function(phi, step0, alpha) {
-    res <- ras_ls(phi, alpha, step0, c1, c2, ext, int, max_fn)
+    res <- ras_ls(phi, alpha, step0, c1 = c1, c2 = c2, ext = ext, int = int,
+                  max_fn = max_fn)
     list(step = res$step, nfn = res$nfn, ngr = res$nfn)
-
   }
 }
 
@@ -69,7 +69,7 @@ rasmussen <- function(c1 = c2 / 2, c2 = 0.1, int = 0.1, ext = 3.0,
 #   \item nfn Number of function evaluations.
 # }
 ras_ls <- function(phi, alpha, step0, c1 = 0.1, c2 = 0.1 / 2, ext = 3.0,
-                   int = 0.1, max_fn = 20) {
+                   int = 0.1, max_fn = Inf) {
   if (c2 < c1) {
     stop("Rasmussen line search: c2 < c1")
   }
