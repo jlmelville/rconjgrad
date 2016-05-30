@@ -11,6 +11,7 @@
 #'   between 0 and 1.
 #' @param c2 Constant used in curvature condition. Should take a value between
 #'   \code{c1} and 1.
+#' @param max_fn Maximum number of function evaluations allowed.
 #' @return Line search function for use in the conjugate gradient routine.
 #' @export
 #' @references
@@ -26,9 +27,9 @@
 #'  # assign to the line_search parameter in conj_grad:
 #'  conj_grad(line_search = more_thuente(c1 = 0.05, c2 = 0.1), ...)
 #' }
-more_thuente <- function(c1 = 1e-4, c2 = 0.1) {
+more_thuente <- function(c1 = 1e-4, c2 = 0.1, max_fn = Inf) {
   function(phi, step0, alpha) {
-    res <- cvsrch(phi, step0, alpha = alpha, c1 = c1, c2 = c2)
+    res <- cvsrch(phi, step0, alpha = alpha, c1 = c1, c2 = c2, maxfev = max_fn)
     list(step = res$step, nfn = res$nfn, ngr = res$nfn)
   }
 }

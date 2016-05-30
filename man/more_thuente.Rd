@@ -4,7 +4,7 @@
 \alias{more_thuente}
 \title{More'-Thuente Line Search}
 \usage{
-more_thuente(c1 = 1e-04, c2 = 0.1)
+more_thuente(c1 = 1e-04, c2 = 0.1, max_fn = Inf)
 }
 \arguments{
 \item{c1}{Constant used in sufficient decrease condition. Should take a value
@@ -12,6 +12,8 @@ between 0 and 1.}
 
 \item{c2}{Constant used in curvature condition. Should take a value between
 \code{c1} and 1.}
+
+\item{max_fn}{Maximum number of function evaluations allowed.}
 }
 \value{
 Line search function for use in the conjugate gradient routine.
