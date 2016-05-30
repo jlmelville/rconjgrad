@@ -34,6 +34,8 @@
 #' @param c2 Constant used in curvature condition. Should take a value between
 #'   \code{c1} and 1.
 #' @param max_iter Maximum number of iterations to carry out the optimization.
+#' @param max_line_fn Maximum number of evaluations of \code{fn} to carry out
+#'  during each line search.
 #' @param red Scalar to determine initial step size guess.
 #' @param max_alpha_mult Maximum scale factor to use when guessing the initial
 #'  step size for the next iteration.
@@ -103,10 +105,12 @@
 #'
 #' # Turning down eps, abstol and reltol to compare with Matlab result at
 #' # http://learning.eng.cam.ac.uk/carl/code/minimize/
+#' # But must also put an upper limit on the number of line function evaluations
+#' # because numerical errors prevent convergence (so don't do this normally!)
 #' res <- conj_grad(par = c(0, 0),
 #'                  fn = rosenbrock_banana$fr, gr = rosenbrock_banana$grr,
 #'                  eps = .Machine$double.xmin, reltol = .Machine$double.xmin,
-#'                  abstol = .Machine$double.xmin)
+#'                  abstol = .Machine$double.xmin, max_line_fn = 20)
 #' res$par # c(1, 1)
 #' res$value # 1.232595e-32
 #' res$iter # 19 iterations
@@ -131,10 +135,11 @@
 conj_grad <- function(par, fn, gr,
                       c1 = c2 / 2,
                       c2 = 0.1,
-                      max_iter = 100,
+                      max_iter = 1000,
+                      max_line_fn = Inf,
                       red = 1,
                       max_alpha_mult = 10,
-                      abstol = NULL,
+                      abstol = .Machine$double.eps,
                       reltol = sqrt(.Machine$double.eps),
                       line_search = "r",
                       ortho_restart = FALSE, nu = 0.1,
@@ -146,10 +151,10 @@ conj_grad <- function(par, fn, gr,
   if (class(line_search) == "character") {
     line_search <- tolower(line_search)
     if (line_search == "mt") {
-      line_search <- more_thuente(c1 = c1, c2 = c2)
+      line_search <- more_thuente(c1 = c1, c2 = c2, max_fn = max_line_fn)
     }
     else if (line_search == "r") {
-      line_search <- rasmussen(c1 = c1, c2 = c2)
+      line_search <- rasmussen(c1 = c1, c2 = c2, max_fn = max_line_fn)
     }
     else {
       stop("Unknown line_search type '", line_search, "'")
