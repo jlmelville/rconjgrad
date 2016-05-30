@@ -84,6 +84,8 @@ List containing:
  \item \code{iter} Number of iterations optimization took place over.
  \item \code{counts} Sublist of two values, giving the number of evaluations
    of \code{fn} and \code{gr}, respectively.
+ \item \code{nresets} Number of times the optimizer was reset to steepest
+   descent.
 }
 }
 \description{

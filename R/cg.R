@@ -78,6 +78,8 @@
 #'  \item \code{iter} Number of iterations optimization took place over.
 #'  \item \code{counts} Sublist of two values, giving the number of evaluations
 #'    of \code{fn} and \code{gr}, respectively.
+#'  \item \code{nresets} Number of times the optimizer was reset to steepest
+#'    descent.
 #' }
 #' @export
 #' @examples
@@ -156,6 +158,7 @@ conj_grad <- function(par, fn, gr,
   else if (class(line_search) != "function") {
     stop("line_search parameter must be either a valid string or a function")
   }
+  nresets <- 0
   nfn <- 0
   ngr <- 0
   # calculate function value and gradient at initial location
@@ -251,6 +254,7 @@ conj_grad <- function(par, fn, gr,
       reset_CG <- TRUE
     }
     if (reset_CG) {
+      nresets <- nresets + 1
       pv <- -step0$df
       step0$d <- dot(step0$df, pv)
     }
@@ -275,7 +279,7 @@ conj_grad <- function(par, fn, gr,
   }
 
   list(par = par, value = fX[length(fX)], values = fX, iter = iter,
-       counts = c(nfn, ngr))
+       counts = c(nfn, ngr), nresets = nresets)
 }
 
 # Polak-Ribiere Update
