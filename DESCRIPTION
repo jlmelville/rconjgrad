@@ -1,7 +1,7 @@
 Package: rcgmin
 Type: Package
 Title: Conjugate Gradient Optimizer in R
-Version: 0.0.0.9000
+Version: 0.0.0.9001
 Authors@R: person("Melville", "James", email = "jlmelville@gmail.com",
     role = c("aut", "cre"))
 Description: An R implementation of a conjugate gradient optimizer using the
