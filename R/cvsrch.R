@@ -205,11 +205,40 @@ cvsrch <- function(phi, step0, alpha = 1,
   infoc <- 1
 
   # Check the input parameters for errors.
-  if (
-    alpha <= 0.0 || c1 < 0.0 ||
-    c2 < 0.0 || xtol < 0.0 || alpha_min < 0.0 ||
-    alpha_max < alpha_min || maxfev <= 0) {
-    stop("Parameters are wrong")
+  params_ok <- TRUE
+  problems <- c()
+  if (alpha <= 0.0) {
+    params_ok <- FALSE
+    problems <- c(problems, paste0("alpha <= 0.0: ", formatC(alpha)))
+  }
+  if (c1 < 0.0) {
+    params_ok <- FALSE
+    problems <- c(problems, paste0("c1 < 0.0: ", formatC(c1)))
+  }
+  if (c2 < 0.0) {
+    params_ok <- FALSE
+    problems <- c(problems, paste0("c2 < 0.0: ", formatC(c2)))
+  }
+  if (xtol < 0.0) {
+    params_ok <- FALSE
+    problems <- c(problems, paste0("xtol < 0.0: ", formatC(xtol)))
+  }
+  if (alpha_min < 0.0) {
+    params_ok <- FALSE
+    problems <- c(problems, paste0("alpha_min < 0.0: ", formatC(alpha_min)))
+  }
+  if (alpha_max < alpha_min) {
+    params_ok <- FALSE
+    problems <- c(problems, paste0("alpha_max ", formatC(alpha_max)
+                         , " < alpha_min ", formatC(alpha_min)))
+  }
+  if (maxfev <= 0) {
+    params_ok <- FALSE
+    problems <- c(problems, paste0("maxfev <= 0: ", formatC(maxfev)))
+  }
+  if (!params_ok) {
+    problems <- paste(problems, collapse = "; ")
+    stop("Parameter errors detected: ", problems)
   }
 
   # Check that pv is a descent direction.
