@@ -1,4 +1,4 @@
-library(rcgmin)
+library(rconjgrad)
 context("CG with Rasmussen")
 
 fxs <- c(2.420000e+01, 4.128200e+00, 3.840252e+00, 3.517264e+00, 1.748701e+00,

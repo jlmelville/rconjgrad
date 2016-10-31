@@ -1,4 +1,4 @@
-library(rcgmin)
+library(rconjgrad)
 context("CG with More'-Thuente")
 
 fxs <- c(2.420000e+01, 4.128256e+00, 3.837450e+00, 3.366653e+00, 1.495371e+00,

@@ -1,4 +1,4 @@
-Package: rcgmin
+Package: rconjgrad
 Type: Package
 Title: Conjugate Gradient Optimizer in R
 Version: 0.0.0.9002

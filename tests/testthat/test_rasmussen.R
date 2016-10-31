@@ -1,4 +1,4 @@
-library(rcgmin)
+library(rconjgrad)
 context("Rasmussen Line Search")
 
 expect_step <- function(actual, x, f, df, alpha, nfev, tolerance = 1e-4) {

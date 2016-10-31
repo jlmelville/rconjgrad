@@ -1,4 +1,4 @@
-#' rcgmin: A package for conjugate gradient minimization with different
+#' rconjgrad: A package for conjugate gradient minimization with different
 #' line search methods.
 #'
 #' @section Optimization:
@@ -77,5 +77,5 @@
 #' }
 #'
 #' @docType package
-#' @name rcgmin
+#' @name rconjgrad
 NULL

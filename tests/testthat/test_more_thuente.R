@@ -1,4 +1,4 @@
-library(rcgmin)
+library(rconjgrad)
 context("More'-Thuente Line Search")
 
 # This test uses input parameters, directions and step sizes from using the MT

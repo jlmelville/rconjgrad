@@ -1,4 +1,4 @@
 library(testthat)
-library(rcgmin)
+library(rconjgrad)
 
-test_check("rcgmin")
+test_check("rconjgrad")

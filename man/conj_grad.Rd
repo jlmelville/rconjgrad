@@ -109,7 +109,7 @@ requires some knowledge of internal interfaces, which is described in the
 package help documentation which can be accessed via the following help
 command:
 
-\code{package?rcgmin}
+\code{package?rconjgrad}
 
 Factory functions that generate a suitable line search function for the
 existing line search methods are \code{\link{more_thuente}} and
