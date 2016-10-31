@@ -9,8 +9,10 @@ fxs <- c(2.420000e+01, 4.128200e+00, 3.840252e+00, 3.517264e+00, 1.748701e+00,
          1.836567e-30)
 pr_result <- conj_grad(par = c(-1.2, 1), fn = rosenbrock_banana$fr,
                       gr = rosenbrock_banana$grr, eps = .Machine$double.xmin,
+                      line_search = "r",
                       reltol = .Machine$double.xmin,
-                      abstol = .Machine$double.xmin, max_line_fn = 20)
+                      abstol = .Machine$double.xmin, max_line_fn = 20,
+                      c1 = 0.05, c2 = 0.1)
 expect_equal(pr_result$value, 4.979684e-30, tolerance = 1e-7)
 expect_equal(pr_result$values, fxs, tolerance = 1e-7)
 expect_equal(pr_result$iter, 26)
@@ -26,6 +28,7 @@ fxs00 <- c(1.00000000000000, 0.77160942667725, 0.58224024884105,
            0.00000000000000)
 pr_result00 <- conj_grad(par = c(0, 0), fn = rosenbrock_banana$fr,
                        gr = rosenbrock_banana$grr, eps = .Machine$double.xmin,
+                       line_search = "r",
                        reltol = .Machine$double.xmin,
                        abstol = .Machine$double.xmin, max_line_fn = 20)
 expect_equal(pr_result00$value, 4.930381e-32, tolerance = 1e-7)
