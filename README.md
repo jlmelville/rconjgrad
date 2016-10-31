@@ -1,4 +1,4 @@
-# rcgmin
+# rconjgrad
 (Non-linear) Conjugate Gradient Optimizer in R with Rasmussen and More-Thuente
 Line Search.
 
@@ -15,7 +15,7 @@ algorithm from [MINPACK](http://www.netlib.org/minpack/).
 ### Installing:
 ```R
 # install.packages("devtools")
-devtools::install_github("jlmelville/rcgmin")
+devtools::install_github("jlmelville/rconjgrad")
 ```
 
 ### Documentation:
@@ -24,7 +24,7 @@ devtools::install_github("jlmelville/rcgmin")
 ?conj_grad
 
 # Details on writing a custom line search function
-package?rcgmin
+package?rconjgrad
 ```
 
 ### Do We Really Need Another CG Minimization Package in R?
