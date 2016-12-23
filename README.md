@@ -2,6 +2,9 @@
 (Non-linear) Conjugate Gradient Optimizer in R with Rasmussen and More-Thuente
 Line Search.
 
+**Note**: This package has been superseded by 
+[mizer](https://github.com/jlmelville/mizer).
+
 This package combines an R translation of two Matlab routines. The first is
 Carl Edward Rasmussen's [conjugate gradient minimization](http://learning.eng.cam.ac.uk/carl/code/minimize/),
 which has its own line search method, which uses cubic and quadratic 
